@@ -1,0 +1,250 @@
+import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'dart:math';
+
+class AnalyticsScreen extends StatelessWidget {
+  final Map<String, int> history;
+
+  AnalyticsScreen({required this.history});
+
+  int getTotal() {
+    return history.values.fold(0, (a, b) => a + b);
+  }
+
+  int getBest() {
+    if (history.isEmpty) return 0;
+    return history.values.reduce((a, b) => a > b ? a : b);
+  }
+
+  double getAverage() {
+    if (history.isEmpty) return 0;
+    return getTotal() / history.length;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    int total = getTotal();
+    int best = getBest();
+    double avg = getAverage();
+
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: Text(
+          "📊 Analytics",
+          style: TextStyle(
+            color: Colors.cyanAccent, // 🔥 FIXED VISIBILITY
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+
+      // 🌌 DARK PREMIUM BACKGROUND
+      body: Stack(
+        children: [
+
+          // 🌑 BASE GRADIENT
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF0F2027),
+                  Color(0xFF203A43),
+                  Color(0xFF2C5364),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+
+          // ✨ FLOATING LIGHT BLOBS
+          ...List.generate(6, (index) => _glowBubble()),
+
+          // 📱 MAIN CONTENT
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(16, 100, 16, 16),
+            child: Column(
+              children: [
+
+                // 🌈 GLOWING CIRCLE GRAPH
+                Container(
+                  height: 220,
+                  width: 220,
+                  child: CustomPaint(
+                    painter: CirclePainter(avg),
+                    child: Center(
+                      child: Text(
+                        "${avg.toInt()} ml",
+                        style: TextStyle(
+                          color: Colors.cyanAccent,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: 25),
+
+                // 💎 GLASS STATS CARD
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                    child: Container(
+                      padding: EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.1),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+
+                          _statTile("💧 Total Intake", "$total ml"),
+                          _statTile("📊 Average", "${avg.toInt()} ml"),
+                          _statTile("🏆 Best Day", "$best ml"),
+
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: 25),
+
+                // 📅 HISTORY
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "History",
+                    style: TextStyle(
+                      color: Colors.cyanAccent,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: 10),
+
+                ...history.entries.map((e) => Container(
+                  margin: EdgeInsets.symmetric(vertical: 6),
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(e.key,
+                          style: TextStyle(color: Colors.white)),
+                      Text("${e.value} ml",
+                          style: TextStyle(
+                            color: Colors.cyanAccent,
+                            fontWeight: FontWeight.bold,
+                          )),
+                    ],
+                  ),
+                ))
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✨ GLOWING BACKGROUND BUBBLE
+  Widget _glowBubble() {
+    final random = Random();
+    return Positioned(
+      left: random.nextDouble() * 300,
+      top: random.nextDouble() * 600,
+      child: Container(
+        width: random.nextDouble() * 120 + 60,
+        height: random.nextDouble() * 120 + 60,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [
+              Colors.cyanAccent.withOpacity(0.15),
+              Colors.transparent,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 📊 STAT TILE
+  Widget _statTile(String title, String value) {
+    return ListTile(
+      title: Text(title,
+          style: TextStyle(color: Colors.white)),
+      trailing: Text(value,
+          style: TextStyle(
+            color: Colors.cyanAccent,
+            fontWeight: FontWeight.bold,
+          )),
+    );
+  }
+}
+
+// 🎯 GLOWING CIRCLE GRAPH
+class CirclePainter extends CustomPainter {
+  final double value;
+
+  CirclePainter(this.value);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    double percentage = min(value / 3000, 1);
+
+    Paint bg = Paint()
+      ..color = Colors.white12
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 14;
+
+    Paint fg = Paint()
+      ..shader = SweepGradient(
+        colors: [
+          Colors.cyanAccent,
+          Colors.blue,
+          Colors.purpleAccent,
+          Colors.cyanAccent,
+        ],
+      ).createShader(Rect.fromCircle(
+          center: Offset(size.width / 2, size.height / 2),
+          radius: size.width / 2))
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 14
+      ..strokeCap = StrokeCap.round;
+
+    Offset center = Offset(size.width / 2, size.height / 2);
+    double radius = size.width / 2;
+
+    // 🌑 Background circle
+    canvas.drawCircle(center, radius, bg);
+
+    // 🌈 Foreground arc
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -pi / 2,
+      2 * pi * percentage,
+      false,
+      fg,
+    );
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => true;
+}
