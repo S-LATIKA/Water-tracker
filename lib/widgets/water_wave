@@ -1,0 +1,88 @@
+import 'package:flutter/material.dart';
+import 'dart:math';
+
+class WaterWave extends StatefulWidget {
+  final double progress;
+
+  WaterWave({required this.progress});
+
+  @override
+  _WaterWaveState createState() => _WaterWaveState();
+}
+
+class _WaterWaveState extends State<WaterWave>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller =
+    AnimationController(vsync: this, duration: Duration(seconds: 3))
+      ..repeat();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: CustomPaint(
+            painter: WavePainter(
+              phase: _controller.value * 2 * pi,
+              progress: widget.progress,
+            ),
+            child: Container(height: 180),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class WavePainter extends CustomPainter {
+  final double phase;
+  final double progress;
+
+  WavePainter({required this.phase, required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    double waterLevel = size.height * (1 - progress);
+
+    Paint wave1 = Paint()
+      ..color = Colors.blue.withOpacity(0.6);
+
+    Paint wave2 = Paint()
+      ..color = Colors.blueAccent.withOpacity(0.4);
+
+    Path path1 = Path();
+    Path path2 = Path();
+
+    path1.moveTo(0, size.height);
+    path2.moveTo(0, size.height);
+
+    for (double x = 0; x <= size.width; x++) {
+      double y1 = 10 * sin((x / size.width * 2 * pi) + phase) + waterLevel;
+      double y2 =
+          15 * sin((x / size.width * 2 * pi) + phase + pi / 2) + waterLevel;
+
+      path1.lineTo(x, y1);
+      path2.lineTo(x, y2);
+    }
+
+    path1.lineTo(size.width, size.height);
+    path1.close();
+
+    path2.lineTo(size.width, size.height);
+    path2.close();
+
+    canvas.drawPath(path2, wave2);
+    canvas.drawPath(path1, wave1);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
