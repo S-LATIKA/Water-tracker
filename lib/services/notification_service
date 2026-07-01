@@ -1,0 +1,77 @@
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+
+class NotificationService {
+  static final FlutterLocalNotificationsPlugin _notifications =
+  FlutterLocalNotificationsPlugin();
+
+  static Future<void> init() async {
+    tz.initializeTimeZones();
+
+    const AndroidInitializationSettings androidSettings =
+    AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    const InitializationSettings settings =
+    InitializationSettings(android: androidSettings);
+
+    await _notifications.initialize(settings);
+
+    await _notifications
+        .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
+  }
+
+  // 🔔 Manual notification
+  static Future<void> showNotification() async {
+    const AndroidNotificationDetails androidDetails =
+    AndroidNotificationDetails(
+      'water_channel',
+      'Water Reminder',
+      channelDescription: 'Reminds to drink water',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+
+    const NotificationDetails details =
+    NotificationDetails(android: androidDetails);
+
+    await _notifications.show(
+      0,
+      "Drink Water 💧",
+      "Stay hydrated!",
+      details,
+    );
+  }
+
+  // ⏰ AUTO HOURLY NOTIFICATION
+  static Future<void> scheduleHourlyReminder() async {
+    const AndroidNotificationDetails androidDetails =
+    AndroidNotificationDetails(
+      'water_channel',
+      'Water Reminder',
+      channelDescription: 'Hourly water reminder',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+
+    const NotificationDetails details =
+    NotificationDetails(android: androidDetails);
+
+    await _notifications.zonedSchedule(
+      1,
+      "Drink Water 💧",
+      "Time to hydrate!",
+      tz.TZDateTime.now(tz.local).add(Duration(seconds: 10)),
+      details,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+
+      // ✅ ADD THIS LINE (FIX)
+      uiLocalNotificationDateInterpretation:
+      UILocalNotificationDateInterpretation.absoluteTime,
+
+      matchDateTimeComponents: DateTimeComponents.time,
+    );
+  }
+}
